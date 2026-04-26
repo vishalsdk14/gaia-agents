@@ -9,11 +9,7 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "declaration": true,
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": {
-      "@gaia-kernel/sdk": ["../GAIA/libs/sdk-ts"]
-    }
+    "resolveJsonModule": true
   },
   "include": ["pkg/**/*", "agents/**/*"],
   "exclude": ["node_modules", "**/*.test.ts"]

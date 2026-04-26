@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@gaia-kernel/sdk": "file:../../../GAIA/libs/sdk-ts",
-    "axios": "^1.6.0",
+    "@gaia-agents/core": "*",
     "express": "^4.18.2"
   },
   "devDependencies": {

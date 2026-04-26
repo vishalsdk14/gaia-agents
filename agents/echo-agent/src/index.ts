@@ -11,7 +11,7 @@
  */
 
 import express from 'express';
-import { BaseAgent } from '../../../pkg/core/agent';
+import { BaseAgent } from '@gaia-agents/core';
 import manifest from '../manifest.json';
 
 /**
