@@ -1,0 +1,13 @@
+{
+  "name": "@gaia-agents/iris",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@gaia-agents/core": "file:../../pkg/core",
+    "playwright": "^1.42.0"
+  }
+}
