@@ -30,6 +30,40 @@ This repository follows a modular, "Monorepo-lite" pattern to ensure scalability
 └── ...                 # [GOVERNANCE] LICENSE, CONTRIBUTING, etc.
 ```
 
+## 🚀 Quickstart
+
+Get the GAIA Agent Ecosystem running in minutes.
+
+### 1. Initialize the Workspace
+Run this at the root of the repository to link all agents and core packages:
+```bash
+npm install
+```
+
+### 2. Start the GAIA Kernel
+Ensure your Kernel is running in a separate terminal:
+```bash
+cd ../GAIA/src/kernel
+export GAIA_AUDIT_SECRET=$(openssl rand -hex 32)
+go run main.go
+```
+
+### 3. Start an Agent
+Launch the tutorial agent:
+```bash
+cd agents/echo-agent
+npm start
+```
+
+### 4. Submit a Goal
+Submit a task to the Kernel and watch the Echo Agent respond:
+```bash
+cd ../GAIA/src/kernel
+./gaia submit "Ask the echo-agent to say 'Hello GAIA!'"
+```
+
+---
+
 ## 🧬 Why this Repository?
 
 The GAIA Kernel provides the "OS" for AI agents. This repository provides the "Applications." 
