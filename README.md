@@ -16,7 +16,21 @@
 
 ---
 
-## 🏗 Why this Repository?
+## 🏗 Repository Structure
+
+This repository follows a modular, "Monorepo-lite" pattern to ensure scalability and strict protocol compliance:
+
+```text
+/gaia-agents
+├── pkg/core/           # [CORE] Shared Universal Agent Skeleton (BaseAgent, Handshake)
+├── agents/             # [AGENTS] The production-ready agent library
+├── templates/          # [TEMPLATES] Ready-to-fork scaffolds (TS, Python)
+├── docs/               # [DOCS] Catalog, guides, and kernel cross-references
+├── scripts/            # [TOOLS] Validation and deployment automation
+└── ...                 # [GOVERNANCE] LICENSE, CONTRIBUTING, etc.
+```
+
+## 🧬 Why this Repository?
 
 The GAIA Kernel provides the "OS" for AI agents. This repository provides the "Applications." 
 
