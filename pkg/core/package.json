@@ -1,0 +1,9 @@
+{
+  "name": "@gaia-agents/core",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@gaia-kernel/sdk": "file:../../GAIA/libs/sdk-ts",
+    "axios": "^1.6.0"
+  }
+}
