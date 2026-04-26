@@ -121,4 +121,3 @@ console.log(`\nTo get started:`);
 console.log(`  cd agents/${agentName}`);
 console.log(`  npm install`);
 console.log(`  npm start`);
-`;
