@@ -1,8 +1,13 @@
 /**
  * Copyright 2026 GAIA Contributors
- * 
+ *
+ * Licensed under the MIT License.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  * GAIA State Manager (Tier 4 Abstraction)
- * Cross-ref: GAIA/pkg/state/tier4_sqlite.go
+ * Provides isolated, auditable persistence via the Kernel's Managed State API.
+ * Cross-ref: GAIA/src/kernel/pkg/state/tier4_sqlite.go
  */
 
 import axios, { AxiosInstance } from 'axios';

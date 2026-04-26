@@ -1,8 +1,13 @@
 /**
  * Copyright 2026 GAIA Contributors
- * 
+ *
+ * Licensed under the MIT License.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  * GAIA Handshake Manager
- * Cross-ref: GAIA/pkg/core/orchestrator.go (Registration Logic)
+ * Implements the registration and heartbeat protocol required by the GAIA Orchestrator.
+ * Cross-ref: GAIA/src/kernel/pkg/core/orchestrator.go
  */
 
 import axios from 'axios';
