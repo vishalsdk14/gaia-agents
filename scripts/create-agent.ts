@@ -118,6 +118,5 @@ fs.writeFileSync(path.join(targetDir, 'src/index.ts'), indexTs);
 
 console.log(`✅  Success! Created ${agentName} in agents/${agentName}`);
 console.log(`\nTo get started:`);
-console.log(`  cd agents/${agentName}`);
-console.log(`  npm install`);
-console.log(`  npm start`);
+console.log(`  npm install (from the root directory)`);
+console.log(`  npm start --workspace=agents/${agentName}`);
