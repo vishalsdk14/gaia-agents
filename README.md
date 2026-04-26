@@ -41,10 +41,10 @@ npm install
 ```
 
 ### 2. Start the GAIA Kernel
-Ensure your Kernel is running in a separate terminal:
+Ensure your Kernel is running in a separate terminal with the correct LLM configuration:
 ```bash
 cd ../GAIA/src/kernel
-export GAIA_AUDIT_SECRET=$(openssl rand -hex 32)
+# Optional: Set GAIA_PLANNER_MODEL or GAIA_PLANNER_API_KEY in your .env
 go run main.go
 ```
 
