@@ -13,48 +13,70 @@ Before you begin, ensure you have the following installed:
 
 ## 1. TypeScript (Native Protocol)
 
-The following boilerplate uses the `@gaia-kernel/sdk` to build a native GAIA agent.
+The following boilerplate provides a complete structure for a native GAIA agent.
 
-```typescript
-import { GaiaAgent, AgentManifest } from '@gaia-kernel/sdk';
-
-const manifest: AgentManifest = {
-  agent_id: "my-custom-agent",
-  version: "1.0.0",
-  endpoint: "http://localhost:3000",
-  transport: "http",
-  protocol: "native",
-  capabilities: [
+### `manifest.json`
+```json
+{
+  "agent_id": "my-custom-agent",
+  "version": "1.0.0",
+  "endpoint": "http://localhost:3000",
+  "transport": "http",
+  "protocol": "native",
+  "state_requirements": {
+    "required": true,
+    "max_bytes": 10240
+  },
+  "capabilities": [
     {
-      name: "example_task",
-      description: "Performs an example task",
-      input_schema: {
-        type: "object",
-        properties: {
-          input: { type: "string" }
-        }
+      "name": "example_task",
+      "description": "Performs an example task",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "input": { "type": "string" }
+        },
+        "required": ["input"]
       },
-      output_schema: {
-        type: "object",
-        properties: {
-          result: { type: "string" }
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "result": { "type": "string" }
         }
       }
     }
   ]
-};
+}
+```
 
-const agent = new GaiaAgent(manifest);
+### `src/index.ts`
+```typescript
+import { GaiaAgent } from '@gaia-agents/core';
+import manifest from '../manifest.json';
 
-// Implement capability logic
-async function handleExample(input: any) {
-  // Use Managed State (Tier 4)
-  const count = await agent.state.get<number>("runs") || 0;
-  await agent.state.set("runs", count + 1);
+class CustomAgent extends GaiaAgent {
+  constructor() {
+    super({
+      manifest: manifest as any,
+      kernelURL: process.env.GAIA_KERNEL_URL || 'http://localhost:8080'
+    });
 
-  return { result: `Processed: ${input.input}` };
+    // 1. Register your capability handlers
+    this.registerCapability('example_task', this.handleExample.bind(this));
+  }
+
+  private async handleExample(input: { input: string }) {
+    // 2. Use Tier 4 Managed State (Isolated persistence)
+    const count = await this.state.get<number>('runs') || 0;
+    await this.state.set('runs', count + 1);
+
+    // 3. Return the result (The SDK handles the GAIA response envelope)
+    return { result: `Processed: ${input.input} (Run #${count + 1})` };
+  }
 }
 
+// 4. Start the agent (Automatically starts the HTTP server)
+const agent = new CustomAgent();
 agent.start();
 ```
 
@@ -69,6 +91,10 @@ from gaia_sdk import GaiaAgent, AgentManifest
 manifest = AgentManifest(
     agent_id="python-research-agent",
     version="1.0.0",
+    state_requirements={
+        "required": True,
+        "max_bytes": 10240
+    },
     capabilities=[{
         "name": "deep_search",
         "description": "Performs deep web searching",

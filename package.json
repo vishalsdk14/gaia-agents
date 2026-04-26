@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "test": "npm run test -w agents/*",
-    "build": "npm run build -w agents/*"
+    "build": "npm run build -w agents/*",
+    "create-agent": "ts-node scripts/create-agent.ts"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

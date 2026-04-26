@@ -4,6 +4,10 @@
   "endpoint": "http://localhost:3000",
   "transport": "http",
   "protocol": "native",
+  "state_requirements": {
+    "required": true,
+    "max_bytes": 10240
+  },
   "capabilities": [
     {
       "name": "echo",
