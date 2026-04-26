@@ -1,0 +1,31 @@
+{
+  "agent_id": "echo-agent",
+  "version": "1.0.0",
+  "endpoint": "http://localhost:3000",
+  "transport": "http",
+  "protocol": "native",
+  "capabilities": [
+    {
+      "name": "echo",
+      "description": "Returns the input string exactly as received. Perfect for system testing.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The message to be echoed back."
+          }
+        },
+        "required": ["text"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}
