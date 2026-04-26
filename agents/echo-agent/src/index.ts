@@ -3,7 +3,7 @@
  * A minimal, readymade example using the @gaia-agents/core SDK.
  */
 
-import { GaiaAgent } from '../../pkg/core';
+import { GaiaAgent } from '../../../pkg/core';
 import manifest from '../manifest.json';
 
 class EchoAgent extends GaiaAgent {
