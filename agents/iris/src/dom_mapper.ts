@@ -18,13 +18,20 @@ export const MAP_SCRIPT = `
     container.style.width = '100%';
     container.style.height = '100%';
     container.style.pointerEvents = 'none';
-    container.style.zIndex = '9999999';
-    document.body.appendChild(container);
-
     // Phase 13: Strict Rules - Remove Magic Numbers
     const MAX_CHILDREN_FOR_PRICE = 3;
     const MAX_TEXT_LENGTH_FOR_PRICE = 50;
     const CURRENCY_REGEX = /[₹$£]/;
+    const CONTAINER_Z_INDEX = '9999999';
+    const LABEL_Z_INDEX = '10000000';
+    const LABEL_FONT_SIZE = '12px';
+    const LABEL_PADDING = '2px 5px';
+    const LABEL_BORDER_RADIUS = '3px';
+    const LABEL_BOX_SHADOW = '0 0 4px black';
+    const MAX_MAP_TEXT_PREVIEW = 50;
+
+    container.style.zIndex = CONTAINER_Z_INDEX;
+    document.body.appendChild(container);
 
     const elements = Array.from(document.querySelectorAll('*')).filter(el => {
         const rect = el.getBoundingClientRect();
@@ -72,18 +79,18 @@ export const MAP_SCRIPT = `
         label.style.left = (rect.left + window.scrollX) + 'px';
         label.style.backgroundColor = 'red';
         label.style.color = 'white';
-        label.style.fontSize = '12px';
+        label.style.fontSize = LABEL_FONT_SIZE;
         label.style.fontWeight = 'bold';
-        label.style.padding = '2px 5px';
-        label.style.borderRadius = '3px';
-        label.style.boxShadow = '0 0 4px black';
-        label.style.zIndex = '10000000';
+        label.style.padding = LABEL_PADDING;
+        label.style.borderRadius = LABEL_BORDER_RADIUS;
+        label.style.boxShadow = LABEL_BOX_SHADOW;
+        label.style.zIndex = LABEL_Z_INDEX;
         container.appendChild(label);
 
         map.push({
             id: id,
             tag: el.tagName.toLowerCase(),
-            text: el.textContent?.trim().slice(0, 50) || '',
+            text: el.textContent?.trim().slice(0, MAX_MAP_TEXT_PREVIEW) || '',
             ariaLabel: el.getAttribute('aria-label') || '',
             placeholder: el.placeholder || '',
             role: el.getAttribute('role') || '',

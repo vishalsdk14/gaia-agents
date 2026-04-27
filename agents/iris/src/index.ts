@@ -16,6 +16,12 @@ const DEFAULT_TIMEOUT = 10000;
 const NAVIGATION_TIMEOUT = 60000;
 const STABILITY_WAIT = 5000;
 const SCRAPE_WAIT = 5000;
+const BOT_DETECTION_TIMEOUT = 5000;
+const POST_ACTION_WAIT = 1000;
+const SCREENSHOT_QUALITY = 70;
+const VIEWPORT_WIDTH = 1920;
+const VIEWPORT_HEIGHT = 1080;
+const DEFAULT_KERNEL_URL = 'http://localhost:8080';
 
 /**
  * Iris is a vision-capable web automation agent.
@@ -30,7 +36,7 @@ class Iris extends GaiaAgent {
   constructor() {
     super({
       manifest: manifest as any,
-      kernelURL: process.env.GAIA_KERNEL_URL || 'http://localhost:8080'
+      kernelURL: process.env.GAIA_KERNEL_URL || DEFAULT_KERNEL_URL
     });
 
     // Register Browser Capabilities
@@ -59,7 +65,7 @@ class Iris extends GaiaAgent {
       });
       this.context = await this.browser.newContext({
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/122.0.0.0 Safari/537.36',
-        viewport: { width: 1920, height: 1080 },
+        viewport: { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT },
         deviceScaleFactor: 1,
         hasTouch: false,
         isMobile: false,
@@ -95,11 +101,10 @@ class Iris extends GaiaAgent {
     console.log(`[${this.manifest.agent_id}] Navigating to: ${input.url}`);
     
     await this.page!.goto(input.url, { 
-      timeout: 60000, 
+      timeout: NAVIGATION_TIMEOUT, 
       waitUntil: (input.wait_until as any) || 'load' 
     });
-    // Additional wait for stability on complex sites
-    await this.page!.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+    await this.page!.waitForLoadState('networkidle', { timeout: BOT_DETECTION_TIMEOUT }).catch(() => {});
 
     const title = await this.page!.title();
     
@@ -134,10 +139,10 @@ class Iris extends GaiaAgent {
     const elementMap = await this.page!.evaluate(MAP_SCRIPT);
     
     // Take a screenshot of the annotated page
+    await this.page!.waitForTimeout(POST_ACTION_WAIT);
     const screenshot = await this.page!.screenshot({ 
-      fullPage: false,
       type: 'jpeg',
-      quality: 70
+      quality: SCREENSHOT_QUALITY
     });
 
     return { 
