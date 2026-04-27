@@ -7,6 +7,21 @@ import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import { GaiaAgent } from '../../../pkg/core';
 import manifest from '../manifest.json';
 
+import { MAP_SCRIPT } from './dom_mapper';
+
+/**
+ * Constants for Playwright interaction timeouts.
+ */
+const DEFAULT_TIMEOUT = 10000;
+const NAVIGATION_TIMEOUT = 60000;
+const STABILITY_WAIT = 5000;
+const SCRAPE_WAIT = 5000;
+
+/**
+ * Iris is a vision-capable web automation agent.
+ * It uses Playwright to interact with web pages and provides
+ * semantic mapping of elements for the GAIA Planner.
+ */
 class Iris extends GaiaAgent {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
@@ -23,6 +38,13 @@ class Iris extends GaiaAgent {
     this.registerCapability('click', this.handleClick.bind(this));
     this.registerCapability('type', this.handleType.bind(this));
     this.registerCapability('scrape', this.handleScrape.bind(this));
+    
+    // New Super-Agent Capabilities (Ported from PANDA/TuriX)
+    this.registerCapability('get_map', this.handleGetMap.bind(this));
+    this.registerCapability('click_id', this.handleClickId.bind(this));
+    this.registerCapability('type_id', this.handleTypeId.bind(this));
+    this.registerCapability('press_key', this.handlePressKey.bind(this));
+    this.registerCapability('find_element', this.handleFindElement.bind(this));
   }
 
   /**
@@ -31,11 +53,39 @@ class Iris extends GaiaAgent {
   private async lazyInit() {
     if (!this.browser) {
       console.log(`[${this.manifest.agent_id}] Launching headless browser...`);
-      this.browser = await chromium.launch({ headless: true });
-      this.context = await this.browser.newContext({
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      this.browser = await chromium.launch({ 
+        headless: true 
       });
+      this.context = await this.browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/122.0.0.0 Safari/537.36',
+        viewport: { width: 1920, height: 1080 },
+        deviceScaleFactor: 1,
+        hasTouch: false,
+        isMobile: false,
+        locale: 'en-IN',
+        timezoneId: 'Asia/Kolkata',
+        extraHTTPHeaders: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+          'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1'
+        }
+      });
+      
       this.page = await this.context.newPage();
+      
+      // Basic stealth: shadow navigator.webdriver
+      await this.page.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', {
+          get: () => undefined,
+        });
+      });
     }
   }
 
@@ -44,52 +94,237 @@ class Iris extends GaiaAgent {
     console.log(`[${this.manifest.agent_id}] Navigating to: ${input.url}`);
     
     await this.page!.goto(input.url, { 
-      waitUntil: input.wait_until || 'domcontentloaded',
-      timeout: 30000 
+      timeout: 60000, 
+      waitUntil: (input.wait_until as any) || 'load' 
     });
+    // Additional wait for stability on complex sites
+    await this.page!.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+
+    const title = await this.page!.title();
+    
+    // Refined Block Detection
+    const isBlockPage = title.includes('Access Denied') || 
+                        title.includes('Attention Required') || 
+                        title.includes('Just a moment...') ||
+                        title.includes('Checking your browser');
+    
+    if (isBlockPage) {
+      throw new Error(`Bot detection triggered. Page title: "${title}". Use more stealthy headers or manual override.`);
+    }
 
     return { 
       status: 'success', 
       url: this.page!.url(),
-      title: await this.page!.title() 
+      title: title 
     };
   }
 
+  /**
+   * handleGetMap generates a numbered map of interactive elements and 
+   * draws visual labels on the page.
+   */
+  private async handleGetMap() {
+    await this.lazyInit();
+    console.log(`[${this.manifest.agent_id}] Generating Interactive Map...`);
+    
+    // Safety wait for page to settle
+    await this.page!.waitForTimeout(1000);
+    
+    const elementMap = await this.page!.evaluate(MAP_SCRIPT);
+    
+    // Take a screenshot of the annotated page
+    const screenshot = await this.page!.screenshot({ 
+      fullPage: false,
+      type: 'jpeg',
+      quality: 70
+    });
+
+    return { 
+      status: 'success', 
+      url: this.page!.url(), // Include URL so kernel can track it
+      title: await this.page!.title(),
+      map: elementMap,
+      screenshot: screenshot.toString('base64'),
+      message: "Interactive map generated. See attached labels in screenshot."
+    };
+  }
+
+  private async handleClickId(input: { id: any; timeout?: number }) {
+    await this.lazyInit();
+    const id = Number(input.id);
+    if (isNaN(id)) {
+      throw new Error(`Invalid ID: "${input.id}" is not a number. The Planner might be hallucinating or using a stale reference.`);
+    }
+    const selector = `[data-gaia-id="${id}"]`;
+    console.log(`[${this.manifest.agent_id}] Clicking ID ${id} (${selector})`);
+    
+    try {
+      const element = this.page!.locator(selector);
+      await element.scrollIntoViewIfNeeded();
+      
+      await element.click({ 
+        timeout: input.timeout || 10000 
+      });
+      // Safety wait for AJAX/Transitions
+      await this.page!.waitForTimeout(2000);
+      return { status: 'success', id: id, url: this.page!.url() };
+    } catch (err: any) {
+      console.warn(`[${this.manifest.agent_id}] Standard click failed for ID ${id}, trying JS click...`);
+      try {
+        // Fallback to JS click if intercepted or unstable
+        await this.page!.$eval(selector, (el: any) => el.click());
+        await this.page!.waitForTimeout(2000);
+        return { status: 'success', id: id, url: this.page!.url(), note: "used_js_click" };
+      } catch (jsErr: any) {
+        console.error(`[${this.manifest.agent_id}] Click failed for ID ${id}: ${err.message}`);
+        const screenshot = await this.page!.screenshot({ type: 'jpeg', quality: 50 }).catch(() => null);
+        const error: any = new Error(`Failed to click element with ID ${id}. This element might be covered by an overlay (like a header) or is not clickable.`);
+        if (screenshot) error.output = { screenshot: screenshot.toString('base64') };
+        throw error;
+      }
+    }
+  }
+
+  private async handleTypeId(input: { id: any; text: string; delay?: number }) {
+    await this.lazyInit();
+    const id = Number(input.id);
+    if (isNaN(id)) {
+      throw new Error(`Invalid ID: "${input.id}" is not a number. The Planner might be hallucinating or using a stale reference.`);
+    }
+    const selector = `[data-gaia-id="${id}"]`;
+    console.log(`[${this.manifest.agent_id}] Typing into ID ${id} (${selector})`);
+    
+    try {
+      const element = this.page!.locator(selector);
+      await element.scrollIntoViewIfNeeded();
+      
+      // Check if it's actually an input
+      const tagName = await element.evaluate(el => el.tagName.toLowerCase());
+      const isEditable = await element.evaluate(el => el.getAttribute('contenteditable') === 'true' || ['input', 'textarea', 'select'].includes(el.tagName.toLowerCase()));
+      
+      if (!isEditable) {
+        throw new Error(`Element <${tagName}> with ID ${id} is not an input field. You cannot type into it. Try clicking it instead.`);
+      }
+
+      await element.fill(input.text, { 
+        timeout: 10000 
+      });
+      return { status: 'success', id: id, url: this.page!.url() };
+    } catch (err: any) {
+      console.warn(`[${this.manifest.agent_id}] Standard type failed for ID ${id}, trying JS fill...`);
+      try {
+        await this.page!.$eval(selector, (el: any, text: string) => {
+          el.value = text;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }, input.text);
+        return { status: 'success', id: id, url: this.page!.url(), note: "used_js_fill" };
+      } catch (jsErr: any) {
+        console.error(`[${this.manifest.agent_id}] Type failed for ID ${id}: ${err.message}`);
+        const screenshot = await this.page!.screenshot({ type: 'jpeg', quality: 50 }).catch(() => null);
+        const error: any = new Error(`Failed to type into element with ID ${id}: ${err.message}`);
+        if (screenshot) error.output = { screenshot: screenshot.toString('base64') };
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Clicks an element identified by a CSS selector.
+   * Throws an error if the element is not found within the timeout.
+   */
   private async handleClick(input: { selector: string; timeout?: number }) {
     await this.lazyInit();
     console.log(`[${this.manifest.agent_id}] Clicking: ${input.selector}`);
     
-    await this.page!.click(input.selector, { 
-      timeout: input.timeout || 10000 
-    });
-
-    return { status: 'success', selector: input.selector };
+    try {
+      await this.page!.click(input.selector, { 
+        timeout: input.timeout || DEFAULT_TIMEOUT 
+      });
+      return { status: 'success', selector: input.selector };
+    } catch (err: any) {
+      throw new Error(`Selector "${input.selector}" not found. Try using get_map to see available elements.`);
+    }
   }
 
+  /**
+   * Types text into an element identified by a CSS selector.
+   * Uses page.fill for speed and JS-based input.
+   */
   private async handleType(input: { selector: string; text: string; delay?: number }) {
     await this.lazyInit();
     console.log(`[${this.manifest.agent_id}] Typing into: ${input.selector}`);
     
-    await this.page!.fill(input.selector, input.text, { 
-      timeout: 10000 
-    });
-
-    return { status: 'success', selector: input.selector };
+    try {
+      await this.page!.fill(input.selector, input.text, { 
+        timeout: DEFAULT_TIMEOUT 
+      });
+      return { status: 'success', selector: input.selector };
+    } catch (err: any) {
+      throw new Error(`Selector "${input.selector}" not found. Try using get_map to see available elements.`);
+    }
   }
 
+  /**
+   * Scrapes text content from elements matching a CSS selector.
+   * Filters out empty strings and can return one or multiple results.
+   */
   private async handleScrape(input: { selector: string; multiple?: boolean }) {
     await this.lazyInit();
     console.log(`[${this.manifest.agent_id}] Scraping: ${input.selector}`);
     
     let results: string[] = [];
-    if (input.multiple) {
-      results = await this.page!.$$eval(input.selector, el => el.map(e => e.textContent || ''));
-    } else {
-      const text = await this.page!.textContent(input.selector);
-      if (text) results.push(text.trim());
+    try {
+      // Wait for the selector to appear
+      await this.page!.waitForSelector(input.selector, { timeout: SCRAPE_WAIT }).catch(() => {});
+      
+      if (input.multiple) {
+        const allResults = await this.page!.$$eval(input.selector, el => el.map(e => e.textContent?.trim() || ''), { timeout: SCRAPE_WAIT });
+        results = allResults.filter(s => s.length > 0);
+      } else {
+        // Find all matches and take the first one that has actual text
+        const allResults = await this.page!.$$eval(input.selector, el => el.map(e => e.textContent?.trim() || ''), { timeout: SCRAPE_WAIT });
+        const firstValid = allResults.find(s => s.length > 0);
+        if (firstValid) {
+          results.push(firstValid);
+        } else {
+          throw new Error(`No non-empty elements found matching selector "${input.selector}".`);
+        }
+      }
+    } catch (err: any) {
+      console.warn(`[${this.manifest.agent_id}] Scrape failed for selector "${input.selector}": ${err.message}`);
+      return { status: 'failed', error: `Selector "${input.selector}" not found within ${SCRAPE_WAIT}ms.`, results: [] };
     }
 
     return { results };
+  }
+
+  private async handlePressKey(input: { key: string }) {
+    await this.lazyInit();
+    console.log(`[${this.manifest.agent_id}] Pressing key: ${input.key}`);
+    await this.page!.keyboard.press(input.key);
+    // Wait for any potential navigation or AJAX
+    await this.page!.waitForTimeout(2000);
+    return { status: 'success', key: input.key };
+  }
+
+  private async handleFindElement(input: { query: string }) {
+    await this.lazyInit();
+    console.log(`[${this.manifest.agent_id}] Finding element: ${input.query}`);
+    const mapResult: any = await this.handleGetMap();
+    
+    const query = input.query.toLowerCase();
+    const element = mapResult.map.find((el: any) => 
+      (el.text || "").toLowerCase().includes(query) || 
+      (el.placeholder || "").toLowerCase().includes(query) ||
+      (el.ariaLabel || "").toLowerCase().includes(query)
+    );
+
+    if (!element) {
+      throw new Error(`Element matching "${input.query}" not found.`);
+    }
+
+    return { id: element.id, element };
   }
 
   // Override stop to cleanup browser

@@ -57,7 +57,8 @@ export class GaiaAgent extends BaseAgent {
           error: {
             code: 'AGENT_INTERNAL_ERROR',
             message: err.message
-          }
+          },
+          output: err.output
         });
       }
     });

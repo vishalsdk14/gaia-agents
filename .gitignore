@@ -25,3 +25,5 @@ env/
 audit.log
 agent.sock
 *.db
+external/
+media/
