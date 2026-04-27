@@ -19,6 +19,14 @@
           "wait_until": { "type": "string", "enum": ["load", "domcontentloaded", "networkidle"] }
         },
         "required": ["url"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "url": { "type": "string" },
+          "title": { "type": "string" }
+        }
       }
     },
     {
@@ -31,6 +39,12 @@
           "timeout": { "type": "number" }
         },
         "required": ["selector"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" }
+        }
       }
     },
     {
@@ -44,6 +58,12 @@
           "delay": { "type": "number" }
         },
         "required": ["selector", "text"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" }
+        }
       }
     },
     {
@@ -52,6 +72,15 @@
       "input_schema": {
         "type": "object",
         "properties": {}
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "map": { "type": "array" },
+          "screenshot": { "type": "string", "description": "Base64 encoded JPEG screenshot" },
+          "url": { "type": "string" }
+        }
       }
     },
     {
@@ -70,6 +99,13 @@
           "timeout": { "type": "number" }
         },
         "required": ["id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "id": { "type": "number" }
+        }
       }
     },
     {
@@ -88,6 +124,13 @@
           "text": { "type": "string", "description": "The text to type." }
         },
         "required": ["id", "text"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "id": { "type": "number" }
+        }
       }
     },
     {
@@ -140,6 +183,12 @@
           "key": { "type": "string" }
         },
         "required": ["key"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" }
+        }
       }
     },
     {
@@ -151,6 +200,13 @@
           "query": { "type": "string", "description": "Text or placeholder to search for" }
         },
         "required": ["query"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number", "description": "The numeric ID of the element found" },
+          "element": { "type": "object", "description": "The element details" }
+        }
       }
     }
   ]

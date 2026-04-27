@@ -338,18 +338,47 @@ class Iris extends GaiaAgent {
     console.log(`[${this.manifest.agent_id}] Finding element: ${input.query}`);
     const mapResult: any = await this.handleGetMap();
     
-    const query = input.query.toLowerCase();
-    const element = mapResult.map.find((el: any) => 
-      (el.text || "").toLowerCase().includes(query) || 
-      (el.placeholder || "").toLowerCase().includes(query) ||
-      (el.ariaLabel || "").toLowerCase().includes(query)
-    );
+    // Phase 17: [FUZZY FIND] Keyword Scoring Logic
+    // Tokenize query into keywords (ignoring very short words like 'for', 'the')
+    const keywords = input.query.toLowerCase().split(/\s+/).filter(k => k.length > 2);
+    if (keywords.length === 0) keywords.push(input.query.toLowerCase());
 
-    if (!element) {
-      throw new Error(`Element matching "${input.query}" not found.`);
+    let bestElement = null;
+    let maxScore = 0;
+
+    for (const el of mapResult.map) {
+      const elText = (el.text || "").toLowerCase();
+      const elPlaceholder = (el.placeholder || "").toLowerCase();
+      const elAria = (el.ariaLabel || "").toLowerCase();
+      const combinedText = `${elText} ${elPlaceholder} ${elAria}`;
+      
+      let score = 0;
+      for (const kw of keywords) {
+        if (combinedText.includes(kw)) {
+          score++;
+        }
+      }
+
+      if (score > maxScore) {
+        maxScore = score;
+        bestElement = el;
+      } else if (score > 0 && score === maxScore && bestElement) {
+        // Tie-breaker: Prefer elements with shorter text as they are usually 
+        // the actual button/link rather than a parent container.
+        const currentBestLen = (bestElement.text || "").length + (bestElement.ariaLabel || "").length;
+        const newLen = (el.text || "").length + (el.ariaLabel || "").length;
+        if (newLen < currentBestLen) {
+          bestElement = el;
+        }
+      }
     }
 
-    return { id: element.id, element };
+    if (!bestElement || maxScore === 0) {
+      throw new Error(`Element matching "${input.query}" not found. (Best keyword match score was 0).`);
+    }
+
+    console.log(`[${this.manifest.agent_id}] Found best match (Score: ${maxScore}/${keywords.length}): ${bestElement.text || bestElement.ariaLabel || bestElement.id}`);
+    return { id: bestElement.id, element: bestElement };
   }
 
   // Override stop to cleanup browser
