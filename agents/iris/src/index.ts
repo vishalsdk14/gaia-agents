@@ -43,6 +43,7 @@ class Iris extends GaiaAgent {
     this.registerCapability('get_map', this.handleGetMap.bind(this));
     this.registerCapability('click_id', this.handleClickId.bind(this));
     this.registerCapability('type_id', this.handleTypeId.bind(this));
+    this.registerCapability('scrape_id', this.handleScrapeId.bind(this));
     this.registerCapability('press_key', this.handlePressKey.bind(this));
     this.registerCapability('find_element', this.handleFindElement.bind(this));
   }
@@ -263,6 +264,30 @@ class Iris extends GaiaAgent {
     } catch (err: any) {
       throw new Error(`Selector "${input.selector}" not found. Try using get_map to see available elements.`);
     }
+  }
+
+  /**
+   * Scrapes text content from an element identified by its GAIA ID.
+   */
+  private async handleScrapeId(input: { id: any }) {
+    await this.lazyInit();
+    const numericId = typeof input.id === 'string' ? parseInt(input.id, 10) : input.id;
+    const selector = `[data-gaia-id="${numericId}"]`;
+    console.log(`[${this.manifest.agent_id}] Scraping ID ${numericId} (${selector})`);
+    
+    let results: string[] = [];
+    try {
+      const text = await this.page!.textContent(selector, { timeout: SCRAPE_WAIT });
+      if (text && text.trim().length > 0) {
+        results.push(text.trim());
+      } else {
+        console.warn(`[${this.manifest.agent_id}] Element with ID ${numericId} has no text content.`);
+      }
+    } catch (err: any) {
+      console.error(`[${this.manifest.agent_id}] Error scraping ID ${numericId}: ${err.message}`);
+    }
+
+    return { results };
   }
 
   /**

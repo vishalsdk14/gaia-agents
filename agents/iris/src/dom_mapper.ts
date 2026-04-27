@@ -21,14 +21,30 @@ export const MAP_SCRIPT = `
     container.style.zIndex = '9999999';
     document.body.appendChild(container);
 
-    const interactiveSelectors = [
-        'a', 'button', 'input', 'select', 'textarea',
-        '[role="button"]', '[role="link"]', '[role="checkbox"]', '[role="menuitem"]',
-        '[onclick]', '.btn', '.button', 'svg', 'i',
-        '[style*="cursor: pointer"]', '[style*="cursor:pointer"]'
-    ];
+    const elements = Array.from(document.querySelectorAll('*')).filter(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+        
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
 
-    const elements = document.querySelectorAll(interactiveSelectors.join(','));
+        // Rule 1: Standard interactive elements
+        const isInteractive = ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName) ||
+                            el.hasAttribute('onclick') ||
+                            el.getAttribute('role') === 'button' ||
+                            style.cursor === 'pointer';
+        if (isInteractive) return true;
+
+        // Rule 2: Price-like text (Currency symbols)
+        const text = el.textContent?.trim() || "";
+        const hasCurrency = /[₹$£]/.test(text);
+        
+        // We only want the "deepest" element that has the currency (avoid parent bloat)
+        if (hasCurrency && el.children.length < 3 && text.length < 50) return true;
+
+        return false;
+    });
+
     const map = [];
     let idCounter = 1;
 

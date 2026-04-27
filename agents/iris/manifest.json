@@ -56,11 +56,17 @@
     },
     {
       "name": "click_id",
-      "description": "Click an element by its numeric ID from the map",
+      "description": "Click an element using its GAIA numeric ID (from get_map).",
       "input_schema": {
         "type": "object",
         "properties": {
-          "id": { "type": ["number", "string"] },
+          "id": {
+            "oneOf": [
+              { "type": "number" },
+              { "type": "string" }
+            ],
+            "description": "The numeric ID of the element."
+          },
           "timeout": { "type": "number" }
         },
         "required": ["id"]
@@ -68,14 +74,43 @@
     },
     {
       "name": "type_id",
-      "description": "Type text into an input field by its numeric ID from the map",
+      "description": "Type text into an element using its GAIA numeric ID (from get_map).",
       "input_schema": {
         "type": "object",
         "properties": {
-          "id": { "type": ["number", "string"] },
-          "text": { "type": "string" }
+          "id": {
+            "oneOf": [
+              { "type": "number" },
+              { "type": "string" }
+            ],
+            "description": "The numeric ID of the element."
+          },
+          "text": { "type": "string", "description": "The text to type." }
         },
         "required": ["id", "text"]
+      }
+    },
+    {
+      "name": "scrape_id",
+      "description": "Scrape text from an element using its GAIA numeric ID (from get_map).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "oneOf": [
+              { "type": "number" },
+              { "type": "string" }
+            ],
+            "description": "The numeric ID of the element."
+          }
+        },
+        "required": ["id"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "results": { "type": "array", "items": { "type": "string" } }
+        }
       }
     },
     {
