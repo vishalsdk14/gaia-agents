@@ -21,6 +21,11 @@ export const MAP_SCRIPT = `
     container.style.zIndex = '9999999';
     document.body.appendChild(container);
 
+    // Phase 13: Strict Rules - Remove Magic Numbers
+    const MAX_CHILDREN_FOR_PRICE = 3;
+    const MAX_TEXT_LENGTH_FOR_PRICE = 50;
+    const CURRENCY_REGEX = /[₹$£]/;
+
     const elements = Array.from(document.querySelectorAll('*')).filter(el => {
         const rect = el.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) return false;
@@ -37,10 +42,10 @@ export const MAP_SCRIPT = `
 
         // Rule 2: Price-like text (Currency symbols)
         const text = el.textContent?.trim() || "";
-        const hasCurrency = /[₹$£]/.test(text);
+        const hasCurrency = CURRENCY_REGEX.test(text);
         
         // We only want the "deepest" element that has the currency (avoid parent bloat)
-        if (hasCurrency && el.children.length < 3 && text.length < 50) return true;
+        if (hasCurrency && el.children.length < MAX_CHILDREN_FOR_PRICE && text.length < MAX_TEXT_LENGTH_FOR_PRICE) return true;
 
         return false;
     });
